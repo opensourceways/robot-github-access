@@ -10,14 +10,12 @@ import (
 	"github.com/opensourceways/community-robot-lib/interrupts"
 	"github.com/opensourceways/community-robot-lib/logrusutil"
 	liboptions "github.com/opensourceways/community-robot-lib/options"
-	"github.com/opensourceways/community-robot-lib/secret"
 	"github.com/opensourceways/community-robot-lib/utils"
 	"github.com/sirupsen/logrus"
 )
 
 type options struct {
-	plugin         liboptions.PluginOptions
-	hmacSecretFile string
+	plugin liboptions.PluginOptions
 }
 
 func (o *options) Validate() error {
@@ -28,8 +26,6 @@ func gatherOptions(fs *flag.FlagSet, args ...string) options {
 	var o options
 
 	o.plugin.AddFlags(fs)
-
-	fs.StringVar(&o.hmacSecretFile, "hmac-secret-file", "/etc/webhook/hmac", "Path to the file containing the HMAC secret.")
 
 	fs.Parse(args)
 	return o
@@ -55,17 +51,10 @@ func main() {
 	agent := demuxConfigAgent{agent: &configAgent, t: utils.NewTimer()}
 	agent.start()
 
-	secretAgent := new(secret.Agent)
-	if err := secretAgent.Start([]string{o.hmacSecretFile}); err != nil {
-		logrus.WithError(err).Fatal("Error starting secret agent.")
-	}
-
-	gethmac := secretAgent.GetTokenGenerator(o.hmacSecretFile)
-
 	d := dispatcher{
 		agent: &agent,
 		hmac: func() []byte {
-			return gethmac()
+			return agent.Hmac
 		},
 	}
 
@@ -78,9 +67,6 @@ func main() {
 
 		configAgent.Stop()
 		logrus.Info("config agent stopped")
-
-		secretAgent.Stop()
-		logrus.Info("secret stopped")
 
 		d.wait()
 	})
