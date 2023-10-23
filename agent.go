@@ -16,6 +16,7 @@ type demuxConfigAgent struct {
 	mut     sync.RWMutex
 	demux   map[string]eventsDemux
 	version string
+	Hmac    []byte
 	t       utils.Timer
 }
 
@@ -45,6 +46,8 @@ func (ca *demuxConfigAgent) load() {
 	ca.mut.Lock()
 	ca.demux = m
 	ca.mut.Unlock()
+
+	ca.Hmac = nc.Hmac
 }
 
 func (ca *demuxConfigAgent) getEndpoints(org, repo, event string) []string {

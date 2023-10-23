@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -8,7 +9,8 @@ import (
 )
 
 type configuration struct {
-	Config accessConfig `json:"access,omitempty"`
+	Config accessConfig    `json:"access,omitempty"`
+	Hmac   json.RawMessage `json:"hmac"`
 }
 
 func (c *configuration) Validate() error {
